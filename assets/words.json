@@ -1,0 +1,24 @@
+{
+  "easy": [
+    "an", "to", "it", "up", "we", "me", "go", "us", "on", "in",
+    "by", "if", "so", "no", "at",
+    "cat", "dog", "sun", "hat", "pen",
+    "box", "run", "bat", "map", "ice"
+  ],
+
+  "medium": [
+    "game", "type", "code", "word", "fast",
+    "slow", "play", "time", "fish", "tree",
+    "rock", "wind", "fire", "water", "stone",
+    "mouse", "light", "sound", "brain", "logic",
+    "input", "score", "level", "phase", "skill"
+  ],
+
+  "hard": [
+    "player", "typing", "damage", "screen", "letter",
+    "random", "object", "method", "target", "update",
+    "handle", "create", "script", "system", "engine",
+    "memory", "action", "buffer", "result", "active",
+    "cursor", "signal", "render", "module", "thread"
+  ]
+}
