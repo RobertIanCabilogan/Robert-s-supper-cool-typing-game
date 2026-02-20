@@ -14,7 +14,7 @@ export class Start extends Phaser.Scene {
     this.score = 0;
 
     this.wordData = this.cache.json.get('words');
-    this.currentDifficulty = 'medium';
+    this.currentDifficulty = 'hard';
     this.currentPool = this.wordData[this.currentDifficulty];
 
     // Score display
