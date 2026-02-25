@@ -1,3 +1,6 @@
+import WordSpawner from '../systems/wordspawner.js';
+import Turret from '../systems/turret.js';
+
 export class Start extends Phaser.Scene {
   constructor() {
     super('Start');
@@ -5,16 +8,19 @@ export class Start extends Phaser.Scene {
 
   preload() {
     this.load.json('words', 'assets/words.json');
+    this.load.spritesheet('turret', 'assets/Sprites/Sprite-0001.png',{
+          frameWidth: 512,
+        frameHeight: 512
+    });
   }
 
   create() {
-    this.speedMultiplier = 1.5;
-    this.words = [];
+    this.speedMultiplier = 1;
     this.currentInput = '';
     this.score = 0;
 
     this.wordData = this.cache.json.get('words');
-    this.currentDifficulty = 'hard';
+    this.currentDifficulty = 'easy';
     this.currentPool = this.wordData[this.currentDifficulty];
 
     // Score display
@@ -23,86 +29,78 @@ export class Start extends Phaser.Scene {
       fill: '#ffffff'
     });
 
-    // Typed text display in the middle
+        // Turret 
+    this.turret = new Turret(this, 640, 660);
+    this.anims.create({
+        key: 'turret-fire',
+        frames: this.anims.generateFrameNumbers('turret', {
+            start: 0,
+            end: 6
+        }),
+        frameRate: 20,
+        repeat: 0
+    });
+
+    // Typed text display
     this.typedText = this.add.text(
-      640,  
-      360,  
+      640,
+      360,
       '',
       { fontSize: '48px', fill: '#00ff00' }
     ).setOrigin(0.5);
 
+
     // Keyboard input
     this.input.keyboard.on('keydown', this.handleKey, this);
-    
-    this.spawnSeconds = 1.25;
-    this.spawnInterval = this.spawnSeconds * 1000;
 
-    // Word spawn loop
-    this.time.addEvent({
-      delay: this.spawnInterval,
-      callback: this.spawnWord,
-      callbackScope: this,
-      loop: true
+    // Word spawner
+    this.wordSpawner = new WordSpawner(this, this.currentPool, 2);
+
+    this.events.on('word-hit', word => {
+    this.wordSpawner.removeWord(word);
+    this.score += 10;
+    this.scoreText.setText('Score: ' + this.score);
     });
   }
 
   update(time, delta) {
-    this.words.forEach(word => {
-      word.y += word.speed * this.speedMultiplier * (delta / 1000);
-
-      if (word.y > 720) {
-        word.destroy();
-      }
-    });
-
-    this.words = this.words.filter(w => w.active);
-  }
-
-  spawnWord() {
-    const text = Phaser.Utils.Array.GetRandom(this.currentPool);
-
-    const word = this.add.text(
-      Phaser.Math.Between(100, 1100),
-      0,
-      text,
-      { fontSize: '32px', fill: '#ffffff' }
-    );
-
-    word.speed = Phaser.Math.Between(40, 80);
-    this.words.push(word);
+    this.wordSpawner.update(delta);
+    this.turret.update();
   }
 
   handleKey(event) {
     if (event.key.length === 1 && event.key !== ' ') {
       this.currentInput += event.key.toLowerCase();
-      this.typedText.setText(this.currentInput); 
+      this.typedText.setText(this.currentInput);
+      this.updateTurretTarget();
     }
 
     if (event.key === 'Backspace') {
       this.currentInput = this.currentInput.slice(0, -1);
-      this.typedText.setText(this.currentInput); 
+      this.typedText.setText(this.currentInput);
+      this.updateTurretTarget();
     }
 
     if (event.key === 'Enter') {
-      this.checkWords();
+        this.turret.fire();
+        this.currentInput = '';
+        this.typedText.setText('');
     }
   }
+    updateTurretTarget() {
+        if (!this.currentInput) {
+            this.turret.clearTarget();
+            return;
+        }
 
-  checkWords() {
-    let matched = false;
+        const match = this.wordSpawner.words.find(word =>
+            word.text.startsWith(this.currentInput)
+        );
 
-    this.words.forEach(word => {
-      if (word.text === this.currentInput) {
-        word.destroy();
-        this.score += 10;
-        this.scoreText.setText('Score: ' + this.score);
-        matched = true;
-      }
-    });
-
-    if (matched) {
-      this.currentInput = '';
-      this.typedText.setText('');
+        if (match) {
+            this.turret.setTarget(match);
+        } else {
+            this.turret.clearTarget();
+        }
     }
-  }
 }
