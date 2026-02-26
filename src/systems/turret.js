@@ -2,7 +2,7 @@ export default class Turret {
   constructor(scene, x, y) {
     this.scene = scene;
 
-    this.sprite = scene.add.sprite(x, y, 'turret', 1).setOrigin(0.5).setScale(0.3);
+    this.sprite = scene.add.sprite(x, y, 'turret', 1).setOrigin(0.5).setScale(0.3).setDepth(10);
     this.sprite.setOrigin(0.5, 0.5);
 
     this.target = null;
@@ -53,7 +53,7 @@ export default class Turret {
       target.x,
       target.y,
       0xffffff
-    ).setOrigin(0, 0).setLineWidth(6);
+    ).setOrigin(0, 0).setLineWidth(6).setDepth(1);
 
     this.scene.time.delayedCall(100, () => {
       laser.destroy();

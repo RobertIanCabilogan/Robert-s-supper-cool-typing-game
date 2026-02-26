@@ -15,8 +15,9 @@ export default class WordSpawner {
       loop: true
     });
   }
-  
+
   spawnWord() {
+    console.log('spawnWord called'); // Debug: check if spawning runs
     let text;
     let attempts = 0;
     const maxAttempts = 10;
@@ -36,10 +37,10 @@ export default class WordSpawner {
       { fontSize: '32px', fill: '#ffffff' }
     );
 
-    // Movement
+    // Movement speed
     word.speed = Phaser.Math.Between(40, 80);
 
-    // Metadata (consistent naming)
+    // Metadata
     word.wordText = text;
     word.score = this.wordPool.score;
 
@@ -49,9 +50,12 @@ export default class WordSpawner {
 
   update(delta) {
     this.words.forEach(word => {
-      word.y += word.speed * this.scene.speedMultiplier * (delta / 1000);
+      // ✅ Use GameState speedMultiplier
+      word.y += word.speed * this.scene.state.speedMultiplier * (delta / 1000);
 
+      // Word reached bottom
       if (word.y > 720) {
+        this.scene.events.emit('word-missed', word);
         this.removeWord(word);
       }
     });
@@ -60,9 +64,6 @@ export default class WordSpawner {
   removeWord(word) {
     Phaser.Utils.Array.Remove(this.activeWordTexts, word.wordText);
     Phaser.Utils.Array.Remove(this.words, word);
-
-    if (word && word.destroy) {
-      word.destroy();
-    }
+    word.destroy();
   }
 }
