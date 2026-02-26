@@ -1,34 +1,33 @@
-// systems/WordSpawner.js
 export default class WordSpawner {
-  constructor(scene, wordPool, spawnSeconds ) {
+  constructor(scene, wordPool, spawnSeconds) {
     this.scene = scene;
     this.wordPool = wordPool;
 
     this.words = [];
     this.activeWordTexts = [];
 
-    this.spawnSeconds = spawnSeconds;
-    this.spawnInterval = this.spawnSeconds * 1000;
+    this.spawnInterval = spawnSeconds * 1000;
 
-    this.timer = scene.time.addEvent({
+    scene.time.addEvent({
       delay: this.spawnInterval,
       callback: this.spawnWord,
       callbackScope: this,
       loop: true
     });
   }
-
+  
   spawnWord() {
     let text;
     let attempts = 0;
     const maxAttempts = 10;
 
+    // Pick a non-duplicate word
     do {
-      text = Phaser.Utils.Array.GetRandom(this.wordPool);
+      text = Phaser.Utils.Array.GetRandom(this.wordPool.words);
       attempts++;
     } while (this.activeWordTexts.includes(text) && attempts < maxAttempts);
 
-    if (this.activeWordTexts.includes(text)) return;
+    if (!text || this.activeWordTexts.includes(text)) return;
 
     const word = this.scene.add.text(
       Phaser.Math.Between(100, 1100),
@@ -37,8 +36,12 @@ export default class WordSpawner {
       { fontSize: '32px', fill: '#ffffff' }
     );
 
+    // Movement
     word.speed = Phaser.Math.Between(40, 80);
+
+    // Metadata (consistent naming)
     word.wordText = text;
+    word.score = this.wordPool.score;
 
     this.words.push(word);
     this.activeWordTexts.push(text);
@@ -52,26 +55,14 @@ export default class WordSpawner {
         this.removeWord(word);
       }
     });
-
-    this.words = this.words.filter(w => w.active);
   }
 
   removeWord(word) {
     Phaser.Utils.Array.Remove(this.activeWordTexts, word.wordText);
     Phaser.Utils.Array.Remove(this.words, word);
-    word.destroy();
-  }
 
-  checkMatch(input) {
-    let matched = false;
-
-    this.words.forEach(word => {
-      if (word.text === input) {
-        this.removeWord(word);
-        matched = true;
-      }
-    });
-
-    return matched;
+    if (word && word.destroy) {
+      word.destroy();
+    }
   }
 }

@@ -1,24 +1,44 @@
 {
-  "easy": [
+  "easy": {
+    "score" : 10, 
+    "words" :  [
     "an", "to", "it", "up", "we", "me", "go", "us", "on", "in",
     "by", "if", "so", "no", "at",
     "cat", "dog", "sun", "hat", "pen",
     "box", "run", "bat", "map", "ice"
-  ],
+  ]
+  },
 
-  "medium": [
+  "medium":{
+    "score" : 25,
+    "words" : [
     "game", "type", "code", "word", "fast",
     "slow", "play", "time", "fish", "tree",
     "rock", "wind", "fire", "water", "stone",
     "mouse", "light", "sound", "brain", "logic",
     "input", "score", "level", "phase", "skill"
-  ],
+  ]
+  },
 
-  "hard": [
+  "hard": {
+    "score" : 50,
+    "words" : [
     "player", "typing", "damage", "screen", "letter",
     "random", "object", "method", "target", "update",
     "handle", "create", "script", "system", "engine",
     "memory", "action", "buffer", "result", "active",
     "cursor", "signal", "render", "module", "thread"
   ]
+  },
+
+  "extreme": {
+    "score" : 100,
+    "words" : [
+    "adventure", "beneficial", "charitable", "dangerous", "expression", "generation",
+    "historical", "impressive", "journalist", "knowledge", "leadership", "motivation",
+    "negotiable", "optimistic", "perception", "qualifying", "remarkable", "sensations",
+    "technology", "uncovering", "validation", "wanderlust", "xenophobic", "youthfully",
+    "zookeeper", "adaptation", "brightness", "complexity", "dependable", "enthusiasm"
+  ]
+  }
 }

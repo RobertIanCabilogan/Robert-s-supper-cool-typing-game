@@ -1,4 +1,3 @@
-
 export default class Turret {
   constructor(scene, x, y) {
     this.scene = scene;
