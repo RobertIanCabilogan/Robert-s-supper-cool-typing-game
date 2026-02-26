@@ -10,29 +10,67 @@ export class MainGame extends Phaser.Scene {
 
   preload() {
     this.load.json('words', 'assets/words.json');
+
     this.load.spritesheet('turret', 'assets/Sprites/Sprite-0001.png', {
       frameWidth: 512,
       frameHeight: 512
     });
+
+    this.load.spritesheet('explosion', 'assets/Sprites/Booms.png', {
+      frameWidth: 250,
+      frameHeight: 141
+    });
+
+    this.load.audio('explosionSound', 'assets/Audio/Boom.mp3');
+    this.load.audio('lazerSound', 'assets/Audio/lazerPew.mp3');
   }
 
   create() {
-    // --- Load word data and create GameState ---
-    const wordData = this.cache.json.get('words');
-    this.state = new GameState(wordData);
 
-    // --- Scoring system ---
-    this.scoringSystem = new ScoringSystem();
+    const state = new GameState(this.cache.json.get('words'));
+    const scoring = new ScoringSystem();
 
-    // --- UI ---
-    this.scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#ffffff' });
-    this.livesText = this.add.text(20, 60, `Lives: ${this.state.lives}`, { fontSize: '24px', fill: '#ff4444' });
-    this.wordsText = this.add.text(20, 100, `Completed: ${this.state.wordsCompleted}`, { fontSize: '24px', fill: '#44ff44' });
-    this.difficultyText = this.add.text(1240, 20, `Difficulty: ${this.state.currentDifficulty}`, {fontSize: '24px',fill: '#ffff00'}).setOrigin(1, 0);
-    this.speedText = this.add.text(1240, 60, `Speed: ${this.state.speedMultiplier.toFixed(1)}`, {fontSize: '24px',fill: '#00ffff'}).setOrigin(1, 0);
-    this.typedText = this.add.text(640, 360, '', { fontSize: '48px', fill: '#00ff00' }).setOrigin(0.5);
+    this.state = state;
+    this.scoringSystem = scoring;
 
-    // --- Animation ---
+    // UI
+    const scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '24px', fill: '#ffffff' });
+    const livesText = this.add.text(20, 60, `Lives: ${state.lives}`, { fontSize: '24px', fill: '#ff4444' });
+    const wordsText = this.add.text(20, 100, `Completed: ${state.wordsCompleted}`, { fontSize: '24px', fill: '#44ff44' });
+    this.timerText = this.add.text(640, 20, "00:00", { fontSize: '28px', fill: '#ffffff' }).setOrigin(0.5, 0);
+
+    const difficultyText = this.add.text(
+      1240,
+      20,
+      `Difficulty: ${state.currentDifficulty}`,
+      { fontSize: '24px', fill: '#ffff00' }
+    ).setOrigin(1, 0);
+
+    const speedText = this.add.text(
+      1240,
+      60,
+      `Speed: ${state.speedMultiplier.toFixed(1)}`,
+      { fontSize: '24px', fill: '#00ffff' }
+    ).setOrigin(1, 0);
+
+    const typedText = this.add.text(
+      640,
+      360,
+      '',
+      { fontSize: '48px', fill: '#00ff00' }
+    ).setOrigin(0.5);
+
+    Object.assign(this, {
+      scoreText,
+      livesText,
+      wordsText,
+      difficultyText,
+      speedText,
+      typedText
+    });
+
+    // Animations
+
     if (!this.anims.exists('turret-fire')) {
       this.anims.create({
         key: 'turret-fire',
@@ -42,103 +80,190 @@ export class MainGame extends Phaser.Scene {
       });
     }
 
-    // --- Gameplay ---
-    this.turret = new Turret(this, 640, 660);
-    this.wordSpawner = new WordSpawner(this, this.state.currentPool, 2);
+    if (!this.anims.exists('explode')) {
+      this.anims.create({
+        key: 'explode',
+        frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 6 }),
+        frameRate: 30,
+        repeat: 0
+      });
+    }
 
-    // --- Events ---
+    // Audio
+
+    this.explosionSound = this.sound.add('explosionSound', { volume: 0.4 });
+    this.lazerSound = this.sound.add('lazerSound', { volume: 0.6 });
+
+    // Gameplay
+
+    const turret = new Turret(this, 640, 660);
+    const wordSpawner = new WordSpawner(this, state.currentPool, 2);
+
+    this.turret = turret;
+    this.wordSpawner = wordSpawner;
+
+    // Events
+
     this.events.on('word-hit', this.onWordHit, this);
     this.events.on('word-missed', this.onWordMissed, this);
 
-    // --- Input ---
+    // Input
+
     this.input.keyboard.on('keydown', this.handleKey, this);
   }
 
   update(_, delta) {
-    this.wordSpawner.update(delta);
-    this.turret.update();
 
-      this.difficultyText.setText(`Difficulty: ${this.state.currentDifficulty}`);
-  this.speedText.setText(`Speed: ${this.state.speedMultiplier.toFixed(1)}`);
+    const { wordSpawner, turret, state, difficultyText, speedText } = this;
+
+    wordSpawner.update(delta);
+    turret.update();
+
+    difficultyText.setText(`Difficulty: ${state.currentDifficulty}`);
+    speedText.setText(`Speed: ${state.speedMultiplier.toFixed(1)}`);
+
+    const events = this.state.gameEvents(delta);
+
+    events.forEach(event => {
+      if (event === "spawnHealth")
+      this.wordSpawner.spawnSpecialWord("health");
+      if (event === "increaseSpeed")
+      this.state.speedMultiplier += 0.1;
+      if (event === "increaseDifficulty"){
+          this.wordSpawner.setWordPool(this.state.currentPool);
+          this.state.increaseDifficultyLevel();
+        }
+      });
+
+    const timeString = this.state.updateTimer(delta);
+    this.timerText.setText(timeString); 
   }
 
   handleKey(event) {
+
+    const { state, turret, wordSpawner, typedText, lazerSound } = this;
     const key = event.key;
 
     if (/^[a-z]$/i.test(key)) {
-    this.state.appendInput(key.toLowerCase());
-    this.typedText.setText(this.state.currentInput);
-    this.updateTurretTarget();
-    return;
-  }
 
-  if (key === 'Backspace') {
-    this.state.removeLastLetter();
-    this.typedText.setText(this.state.currentInput);
-    this.updateTurretTarget();
-    return;
-  }
+      state.appendInput(key.toLowerCase());
+      typedText.setText(state.currentInput);
 
-  if (key === 'Enter' || key === ' ') {   // <--- Add space here
-    this.turret.fire();
-    this.state.resetInput();
-    this.typedText.setText('');
-    this.turret.clearTarget();
-    return;
-  }
-}
-
-  updateTurretTarget() {
-    const input = this.state.currentInput;
-
-    if (!input) {
-      this.turret.clearTarget();
+      this.updateTurretTarget();
       return;
     }
 
-    const match = this.wordSpawner.words.find(word =>
+    if (key === 'Backspace') {
+
+      state.removeLastLetter();
+      typedText.setText(state.currentInput);
+
+      this.updateTurretTarget();
+      return;
+    }
+
+    if (key === 'Enter') {
+
+      const input = state.currentInput;
+
+      const match = wordSpawner.words.find(word =>
+        word.wordText === input
+      );
+
+      if (match) {
+        lazerSound.play();
+        turret.fire(match);
+      }
+
+      state.resetInput();
+      typedText.setText('');
+      turret.clearTarget();
+
+      return;
+    }
+  }
+
+  updateTurretTarget() {
+
+    const { state, turret, wordSpawner } = this;
+    const input = state.currentInput;
+
+    if (!input) {
+      turret.clearTarget();
+      return;
+    }
+
+    const match = wordSpawner.words.find(word =>
       word.wordText.startsWith(input)
     );
 
-    match ? this.turret.setTarget(match) : this.turret.clearTarget();
+    match ? turret.setTarget(match) : turret.clearTarget();
+  }
+
+  playExplosion(x, y) {
+
+    const explosion = this.add.sprite(x, y, 'explosion');
+
+    explosion.play('explode');
+    this.explosionSound.play();
+
+    explosion.once('animationcomplete', () => {
+      explosion.destroy();
+    });
   }
 
   onWordHit(word) {
-    this.wordSpawner.removeWord(word);
 
-    // Update score
-    const speedScore = Math.floor(word.score * this.state.speedMultiplier);
-    const score = this.scoringSystem.add(speedScore);
-    this.scoreText.setText('Score: ' + score);
-    
-    this.state.resetInput();
-    this.typedText.setText('');
-    this.turret.clearTarget();
-    // Update words completed
-    const completed = this.state.theWordsCompleted();
-    this.wordsText.setText('Completed: ' + completed);
+    const { state, scoringSystem, scoreText, wordsText, turret, typedText, wordSpawner } = this;
+
+    this.playExplosion(word.x, word.y);
+    wordSpawner.removeWord(word);
+
+    const speedScore = Math.floor(word.score * state.speedMultiplier);
+    const score = scoringSystem.add(speedScore);
+    if (word.special === "health") {
+      const lives = this.state.gainLife(1);
+      this.livesText.setText('Lives: ' + lives);
+    }
+    scoreText.setText('Score: ' + score);
+
+    state.resetInput();
+    typedText.setText('');
+    turret.clearTarget();
+
+    const completed = state.theWordsCompleted();
+    wordsText.setText('Completed: ' + completed);
   }
 
   onWordMissed(word) {
-    this.wordSpawner.removeWord(word);
 
-    // Lose a life
-    const livesLeft = this.state.loseLife();
-    this.livesText.setText('Lives: ' + livesLeft);
+    const { state, livesText, turret, typedText, wordSpawner } = this;
 
-    this.state.resetInput();
-    this.typedText.setText('');
-    this.turret.clearTarget();
+    wordSpawner.removeWord(word);
 
-    if (this.state.isGameOver()) {
+    const livesLeft = state.loseLife();
+    livesText.setText('Lives: ' + livesLeft);
+
+    state.resetInput();
+    typedText.setText('');
+    turret.clearTarget();
+
+    if (state.isGameOver()) {
       this.gameOver();
     }
-}
+  }
 
   gameOver() {
-    this.add.text(640, 360, 'GAME OVER', { fontSize: '64px', fill: '#ff0000' }).setOrigin(0.5);
+
+    this.add.text(
+      640,
+      360,
+      'GAME OVER',
+      { fontSize: '64px', fill: '#ff0000' }
+    ).setOrigin(0.5);
 
     this.input.keyboard.removeAllListeners();
+
     this.wordSpawner.words.forEach(word => word.destroy());
   }
 }

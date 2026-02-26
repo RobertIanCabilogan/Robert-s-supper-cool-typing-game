@@ -1,4 +1,6 @@
 {
+  "special":["health"],
+  
   "easy": {
     "score" : 10, 
     "words" :  [
@@ -16,7 +18,7 @@
     "slow", "play", "time", "fish", "tree",
     "rock", "wind", "fire", "water", "stone",
     "mouse", "light", "sound", "brain", "logic",
-    "input", "score", "level", "phase", "skill"
+    "input", "score", "level", "phase", "skill" 
   ]
   },
 
