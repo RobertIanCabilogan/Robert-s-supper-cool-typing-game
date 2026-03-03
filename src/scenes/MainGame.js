@@ -1,8 +1,8 @@
 import WordSpawner from '../systems/wordspawner.js';
 import Turret from '../systems/turret.js';
-import GameState from '../systems/GameState.js';
-import ScoringSystem from '../systems/ScoringSystem.js';
-//lol
+import GameState from '../systems/gamestate.js';
+import ScoringSystem from '../systems/scoringsystem.js';
+
 export class MainGame extends Phaser.Scene {
 
   constructor() {
