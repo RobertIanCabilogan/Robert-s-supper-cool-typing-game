@@ -6,7 +6,7 @@ export default class WordSpawner {
     this.words = [];
     this.activeWordTexts = [];
 
-    this.spawnInterval = spawnSeconds * 1000;
+    this.spawnInterval = spawnSeconds * 650;
 
     scene.time.addEvent({
       delay: this.spawnInterval,
@@ -21,7 +21,6 @@ export default class WordSpawner {
     let attempts = 0;
     const maxAttempts = 10;
 
-    // Pick a non-duplicate word
     do {
       text = Phaser.Utils.Array.GetRandom(this.wordPool.words);
       attempts++;
@@ -72,10 +71,10 @@ export default class WordSpawner {
     this.words.forEach(word => {
       word.y += word.speed * this.scene.state.speedMultiplier * (delta / 1000);
 
-      // Word reached bottom
       if (word.y > 720) {
         this.scene.events.emit('word-missed', word);
         this.removeWord(word);
+        
       }
     });
   }
